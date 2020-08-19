@@ -1,12 +1,12 @@
 # Download pretrained models
 mkdir -p model
 mkdir -p model/pretrained_model
-if [ ! -f model/pretrained_model/resnet-101-caffe.pth ]; then
-    curl http://www.yuwenxiong.com/pretrained_model/resnet-101-caffe.pth -o model/pretrained_model/resnet-101-caffe.pth
-fi
-if [ ! -f model/pretrained_model/resnet-50-caffe.pth ]; then
-    curl http://www.yuwenxiong.com/pretrained_model/resnet-50-caffe.pth -o model/pretrained_model/resnet-50-caffe.pth
-fi
+#if [ ! -f model/pretrained_model/resnet-101-caffe.pth ]; then
+#    curl http://www.yuwenxiong.com/pretrained_model/resnet-101-caffe.pth -o model/pretrained_model/resnet-101-caffe.pth
+#fi
+#if [ ! -f model/pretrained_model/resnet-50-caffe.pth ]; then
+#    curl http://www.yuwenxiong.com/pretrained_model/resnet-50-caffe.pth -o model/pretrained_model/resnet-50-caffe.pth
+#fi
 
 # Install essential python packages
 
@@ -19,7 +19,7 @@ pip install opencv-python
 # Build essential operators
 
 # build cython modules
-cd net/bbox || exit; python setup.py build_ext --inplace
+cd upsnet/bbox || exit; python setup.py build_ext --inplace
 cd ../rpn || exit; python setup.py build_ext --inplace
 cd ../nms || exit; python setup.py build_ext --inplace
 # build operators

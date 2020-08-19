@@ -44,7 +44,8 @@ if config.train.use_horovod:
     import horovod.torch as hvd
     from horovod.torch.mpi_ops import allreduce_async
     hvd.init()
-    torch.cuda.set_device(hvd.local_rank())
+    if torch.cuda.is_available():
+        torch.cuda.set_device(hvd.local_rank())
 
 is_master = (not config.train.use_horovod) or hvd.rank() == 0
 
@@ -104,11 +105,11 @@ def adjust_learning_rate(optimizer, iter, config):
 
 def upsnet_train():
 
-    if is_master:
-        logger.info('training config:{}\n'.format(pprint.pformat(config)))
+    # if is_master:
+        # logger.info('training config:{}\n'.format(pprint.pformat(config)))
     gpus = [torch.device('cuda', int(_)) for _ in config.gpus.split(',')]
     num_replica = hvd.size() if config.train.use_horovod else len(gpus)
-    num_gpus = 1 if config.train.use_horovod else len(gpus)
+    num_gpus = len(gpus) if config.train.use_horovod else 1
 
     # create models
     train_model = eval(config.symbol)().cuda()
@@ -139,10 +140,10 @@ def upsnet_train():
     metrics = []
     metrics_name = []
     if config.network.has_rpn:
-        metrics.extend([AvgMetric(name='rpn_cls_loss'), AvgMetric(name='rpn_bbox_loss'),])
+        metrics.extend([AvgMetric(name='rpn_cls_loss'), AvgMetric(name='rpn_bbox_loss')])
         metrics_name.extend(['rpn_cls_loss', 'rpn_bbox_loss'])
     if config.network.has_rcnn:
-        metrics.extend([AvgMetric(name='rcnn_accuracy'), AvgMetric(name='cls_loss'), AvgMetric(name='bbox_loss'),])
+        metrics.extend([AvgMetric(name='rcnn_accuracy'), AvgMetric(name='cls_loss'), AvgMetric(name='bbox_loss')])
         metrics_name.extend(['rcnn_accuracy', 'cls_loss', 'bbox_loss'])
     if config.network.has_mask_head:
         metrics.extend([AvgMetric(name='mask_loss'), ])
@@ -164,13 +165,15 @@ def upsnet_train():
             hvd.broadcast_parameters(train_model.state_dict(), root_rank=0)
     else:
         if is_master:
-            train_model.load_state_dict(torch.load(config.network.pretrained))
+            print("pretrained:", config.network.pretrained)
+            m = torch.load(config.network.pretrained)
+            train_model.load_state_dict(m)
 
         if config.train.use_horovod:
             hvd.broadcast_parameters(train_model.state_dict(), root_rank=0)
 
     if not config.train.use_horovod:
-        train_model = DataParallel(train_model, device_ids=[int(_) for _ in config.gpus.split(',')]).to(gpus[0])
+        train_model = DataParallel(train_model.cuda(), device_ids=[int(_) for _ in config.gpus.split(',')]).to(gpus[0])
 
     if is_master:
         batch_end_callback[0](0, 0)
@@ -229,7 +232,6 @@ def upsnet_train():
                         writer.add_scalar('train_' + l, loss, curr_iter)
                         metric.update(_, _, loss)
                 curr_iter += 1
-
 
                 if curr_iter in config.train.decay_iteration:
                     if is_master:
@@ -308,7 +310,6 @@ def upsnet_train():
                     if curr_iter % config.train.display_iter == 0:
                         for callback in batch_end_callback:
                             callback(curr_iter, metrics)
-
 
                     if curr_iter % config.train.snapshot_step == 0:
                         logger.info('taking snapshot ...')

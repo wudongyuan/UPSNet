@@ -22,11 +22,11 @@ config.debug_mode = False
 # config.output_path = ''
 # config.model_prefix = ''
 # config.symbol = ''
-config.gpus = '2'
+config.gpus = '0,1'
 
 # network related params
 config.network = edict()
-# config.network.pretrained = ''
+config.network.pretrained = '../model/pretrained_model'
 config.network.backbone_fix_bn = True
 config.network.backbone_with_dilation = False
 config.network.backbone_with_dpyramid = False
@@ -54,11 +54,12 @@ config.network.anchor_ratios = (0.5, 1, 2)
 config.network.anchor_scales = (8,)
 config.network.num_anchors = 3
 config.network.rpn_with_norm = 'none'
+config.network.has_rpn = 'true'
 
 # fpn
 config.network.has_fpn = True
 config.network.fpn_feature_dim = 256
-config.network.fpn_with_gap = False
+config.network.fpn_with_gap = True
 config.network.fpn_upsample_method = 'nearest'
 config.network.fpn_with_norm = 'none'
 
@@ -80,14 +81,14 @@ config.dataset = edict()
 # config.dataset.image_set = ''
 # config.dataset.test_image_set = ''
 # config.dataset.root_path = ''
-# config.dataset.dataset_path = ''
-config.dataset.num_classes = 80
-config.dataset.num_seg_classes = 0
+config.dataset.dataset_path = '../data/coco'
+config.dataset.num_classes = 81
+config.dataset.num_seg_classes = 133
 
 # training related params
 config.train = edict()
 
-config.train.use_horovod = False
+config.train.use_horovod = True
 config.train.lr_schedule = 'step'
 config.train.flip = True
 config.train.shuffle = True
@@ -95,17 +96,17 @@ config.train.resume = False
 config.train.begin_iteration = 0
 config.train.eval_data = True
 
-# config.train.warmup_iteration = 0
-# config.train.lr = 0
-# config.train.wd = 0
-# config.train.momentum = 0
-# config.train.batch_size = 0
+config.train.warmup_iteration = 0
+config.train.lr = 0
+config.train.wd = 0
+config.train.momentum = 0
+config.train.batch_size = 512
 
 # panoptic head related param
-# config.train.fcn_loss_weight = 0
-# config.train.fcn_with_roi_loss = False
-# config.train.panoptic_loss_weight = 0
-# config.train.panoptic_boox_keep_fraction = 0
+config.train.fcn_loss_weight = 0
+config.train.fcn_with_roi_loss = False
+config.train.panoptic_loss_weight = 0
+config.train.panoptic_box_keep_fraction = 0
 
 # RCNN
 config.train.batch_rois = 512
@@ -151,6 +152,8 @@ config.train.bbox_loss_weight = 1.
 config.train.fcn_loss_weight = 1.
 config.train.panoptic_loss_weight = 1.
 
+config.train.scales = [256]
+config.train.max_size = 800
 
 config.test = edict()
 
@@ -179,7 +182,7 @@ config.test.panoptic_stuff_area_limit = 4096
 def update_config(config_file):
     exp_config = None
     with open(config_file) as f:
-        exp_config = edict(yaml.load(f), Loader=yaml.FullLoader)
+        exp_config = edict(yaml.load(f, Loader=yaml.FullLoader))
         for k, v in exp_config.items():
             if k in config:
                 if isinstance(v, dict):

@@ -2,7 +2,7 @@
 output_path: "./output/upsnet/coco"
 model_prefix: "upsnet_resnet_50_coco_"
 symbol: resnet_50_upsnet
-gpus: '0'
+gpus: '0,1'
 dataset:
   num_classes: 81
   num_seg_classes: 133
@@ -19,11 +19,11 @@ network:
   has_fcn_head: true
   fcn_head: "FCNHead"
   has_panoptic_head: true
-  pretrained: "./model/pretrained_model/resnet-50-caffe.pth"
+  pretrained: "../model/upsnet_resnet_50_coco_90000.pth"
   fpn_with_gap: true
 
 train:
-  use_horovod: false
+  use_horovod: true
   scales:
   - 800
   max_size: 1333
